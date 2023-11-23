@@ -19,9 +19,6 @@ import (
 var(
 	//INSTANCE_METRIC_COLLECTOR_IP = "10.0.4.80"
 	//INSTANCE_METRIC_COLLECTOR_PORT = "40802"
-
-	// INFLUXDB_IP = "10.0.4.87"
-	// INFLUXDB_PORT = "40700"
 	
     INFLUXDB_CSD_DB = "OpenCSD_Management_Platform"
     INFLUXDB_CSD_MEASUREMENT = "csd_metric"
@@ -182,7 +179,7 @@ func main() {
 	// pb.RegisterEtcdMetricServer(s, &server{}) // register etcd metric server start
     
 	fmt.Println("gRPC Server Created [port : 40801]")
-	
+
 	if err := s.Serve(lis); err != nil {
         log.Fatalf("failed to serve: %v", err)
     }
