@@ -16,7 +16,6 @@ spec:
         - name: regcred
       containers:
         - name: opencsd-metric-collector
-          # Replace this with the built image name
           image: ketidevit2/opencsd-metric-collector:v0.0.1
           command:
           - opencsd-metric-collector
