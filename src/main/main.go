@@ -33,10 +33,19 @@ type server struct {
 }
 
 type CSDMetricData struct {
-	ID			 int32	
-	CPUUSAGE 	 float64
-	MEMUSAGE	 float64
-	NETWORKUSAGE float64
+	ID				int32	
+	CPU_CAPACITY  	float64
+	CPU_USAGE 	 	float64
+	CPU_PERCENT		float64
+	MEM_CAPACITY  	float64
+	MEM_USAGE 	 	float64
+	MEM_PERCENT		float64
+	DISK_CAPACITY  	float64
+	DISK_USAGE 	 	float64
+	DISK_PERCENT	float64
+	NET_RX_BYTE 	float64
+	NET_TX_BYTE 	float64
+	NET_BANDWIDTH 	float64
 }
 
 type EtcdMetricData struct {
