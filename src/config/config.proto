@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package config;
+
+option go_package = "/root/workspace/cra/HUN/test2";
+
+service SEMetric {
+    rpc receiveSEMetric (SEMetricRequest) returns (MetricResponse);
+}
+
+service SSDMetric {
+    rpc receiveSSDMetric (SSDMetricRequest) returns (MetricResponse);
+}
+
+service CSDMetric {
+    rpc receiveCSDMetric (CSDMetricRequest) returns (MetricResponse);
+}
+
+service EtcdMetric {
+    rpc receiveEtcdMetric (EtcdMetricRequest) returns (MetricResponse);
+}
+
+message CSDMetricRequest { // csd metric 전송
+    int32 id = 1;
+	double cpuUsage = 2;
+	double memUsage = 3;
+	double networkSpeed = 4;
+}
+
+message EtcdMetricRequest { // etcd metric 전송
+    int32 id = 1;
+	double cpuUsage = 2;
+	double memUsage = 3;
+	double networkSpeed = 4;
+}
+
+message SEMetricRequest {
+    
+}
+
+message SSDMetricRequest {
+
+}
+
+message MetricResponse { // csd metric 응답
+    string json_config = 1;
+}
