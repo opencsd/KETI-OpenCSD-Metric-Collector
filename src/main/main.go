@@ -175,7 +175,7 @@ func CSDMetricInsert(metricData *CSDMetricData) {
 
 func main() {
     lis, err := net.Listen("tcp", ":40801")
-	//fmt.Println("grpc server created")
+
     if err != nil {
         log.Fatalf("failed to listen: %v", err)
     }
