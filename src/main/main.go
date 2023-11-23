@@ -49,7 +49,7 @@ type CSDMetricData struct {
 }
 
 type EtcdMetricData struct {
-
+	ID				int32
 }
 
 // CSD stub handler server
