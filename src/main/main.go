@@ -29,23 +29,27 @@ var(
 
 type server struct {
     pb.UnimplementedCSDMetricServer // csd metric method stub
-	pb.UnimplementedEtcdMetricServer // etcd metric method stub
+	// pb.UnimplementedEtcdMetricServer // etcd metric method stub
 }
 
 type CSDMetricData struct {
-	ID				int32	
-	CPU_CAPACITY  	float64
-	CPU_USAGE 	 	float64
-	CPU_PERCENT		float64
-	MEM_CAPACITY  	float64
-	MEM_USAGE 	 	float64
-	MEM_PERCENT		float64
-	DISK_CAPACITY  	float64
-	DISK_USAGE 	 	float64
-	DISK_PERCENT	float64
-	NET_RX_BYTE 	float64
-	NET_TX_BYTE 	float64
-	NET_BANDWIDTH 	float64
+	Id           int32          `json:"id"`
+	
+	TotalCpuCapacity  int32 	  `json:"totalCpuCapacity"`
+	CpuUsage		  float64 `json:"cpuUsage"`
+	CpuUsagePercent	  float64 `json:"cpuUsagePercent"`
+	
+	TotalMemCapacity  int32     `json:"totalMemCapacity"`
+	MemUsage		  int32 	  `json:"memUsage"`
+	MemUsagePercent	  float64 `json:"memUsagePercent"`
+	
+	TotalDiskCapacity int32     `json:"totalDiskCapacity"`
+	DiskUsage		  int32     `json:"diskUsage"`
+	DiskUsagePercent  float64 `json:"diskUsagePercent"`
+	
+	NetworkBandwidth  int32     `json:"networkBandwidth"`
+	NetworkRxData	  int32     `json:"networkRxData"`
+	NetworkTxData	  int32     `json:"networkTxData"`
 }
 
 type EtcdMetricData struct {
@@ -56,19 +60,53 @@ type EtcdMetricData struct {
 func (s *server) ReceiveCSDMetric(ctx context.Context, in *pb.CSDMetricRequest) (*pb.MetricResponse, error) {
 	// request data parsing
 	id := in.GetId()
+
+    totalCpuCapacity := in.GetTotalCpuCapacity()
     cpuUsage := in.GetCpuUsage()
+    cpuUsagePercent := in.GetCpuUsagePercent()
+
+    totalMemCapacity := in.GetTotalMemCapacity()
     memUsage := in.GetMemUsage()
-    networkSpeed := in.GetNetworkSpeed()
+    memUsagePercent := in.GetMemUsagePercent()
+
+    totalDiskCapacity := in.GetTotalDiskCapacity()
+    diskUsage := in.GetDiskUsage()
+    diskUsagePercent := in.GetDiskUsagePercent()
+
+    networkBandwidth := in.GetNetworkBandwidth()
+    networkRxData := in.GetNetworkRxData()
+    networkTxData := in.GetNetworkTxData()
+
+
 	
     // 수신 데이터 로그 출력
-    log.Printf("Received data: Id=%d, CpuUsage=%.4f, MemUsage=%.4f, NetworkSpeed=%.4f", id, cpuUsage, memUsage, networkSpeed)
+    // log.Printf("Received data: Id=%d, CpuUsage=%.4f, MemUsage=%.4f, NetworkSpeed=%.4f", id, cpuUsage, memUsage, networkSpeed)
+
+	log.Printf("Received data: TotalCpuCapacity=%d, CpuUsage=%.4f, CpuUsagePercent=%.4f", totalCpuCapacity, cpuUsage, cpuUsagePercent)
+	log.Printf("TotalMemCapacity=%d, MemUsage=%d, MemUsagePercent=%.4f", totalMemCapacity, memUsage, memUsagePercent)
+	log.Printf("TotalDiskCapacity=%d, DiskUsage=%d, DiskUsagePercent=%.4f", totalDiskCapacity, diskUsage, diskUsagePercent)
+	log.Printf("NetworkBandwidth=%d, NetworkRxData=%d, NetworkTxData=%d", networkBandwidth, networkRxData, networkTxData)
+
 
 	// 메트릭 구조체 생성 및 초기화
 	var csdMetricData CSDMetricData
-	csdMetricData.ID = id
-	csdMetricData.CPUUSAGE = cpuUsage
-	csdMetricData.MEMUSAGE = memUsage
-	csdMetricData.NETWORKUSAGE = networkSpeed
+	csdMetricData.Id = id
+
+	csdMetricData.TotalCpuCapacity = totalCpuCapacity
+	csdMetricData.CpuUsage = cpuUsage
+	csdMetricData.CpuUsagePercent = cpuUsagePercent
+
+	csdMetricData.TotalMemCapacity = totalMemCapacity
+	csdMetricData.MemUsage = memUsage
+	csdMetricData.MemUsagePercent = memUsagePercent
+
+	csdMetricData.TotalDiskCapacity = totalDiskCapacity
+	csdMetricData.DiskUsage = diskUsage
+	csdMetricData.DiskUsagePercent = diskUsagePercent
+
+	csdMetricData.NetworkBandwidth = networkBandwidth
+	csdMetricData.NetworkRxData = networkRxData
+	csdMetricData.NetworkTxData = networkTxData
 
     // csd metric DB에 삽입
     CSDMetricInsert(&csdMetricData)
@@ -85,6 +123,9 @@ func CSDMetricInsert(metricData *CSDMetricData) {
     INFLUX_PORT := os.Getenv("INFLUX_PORT")
     INFLUX_USERNAME := os.Getenv("INFLUX_USERNAME")
     INFLUX_PASSWORD := os.Getenv("INFLUX_PASSWORD")
+
+	//INSTANCE_METRIC_COLLECTOR_IP = "10.0.4.80"
+	//INSTANCE_METRIC_COLLECTOR_PORT = "40802"
 
 	c, err := client.NewHTTPClient(client.HTTPConfig{ // InfluxDB 연결
 		Addr: "http://" + INFLUX_IP + ":" + INFLUX_PORT, 
@@ -107,10 +148,24 @@ func CSDMetricInsert(metricData *CSDMetricData) {
 	// tags := map[string]string{"flags": "csd-metric"} //etcd 정보인지 csd 정보인지 분기 (etcd : 1, csd metric : 2)
 	fields := map[string]interface{}{
 		"currTime": time.Now().Format("15:04:05"),
-		"id": metricData.ID,
-		"cpuUsage":  metricData.CPUUSAGE,
-		"memeUsage": metricData.MEMUSAGE,
-		"networkUsage": metricData.NETWORKUSAGE,
+		"id": metricData.Id,
+
+		"cpuUsageCapacity": metricData.TotalCpuCapacity,
+		"cpuUsage": metricData.CpuUsage,
+		"cpuUsagePercent": metricData.CpuUsagePercent,
+
+		"memUsageCapacity":  metricData.TotalMemCapacity,
+		"memUsage": metricData.MemUsage,
+		"memUsagePercent": metricData.MemUsagePercent,
+
+		
+		"diskUsageCapacity":  metricData.TotalDiskCapacity,
+		"diskUsage": metricData.DiskUsage,
+		"diskUsagePercent": metricData.DiskUsagePercent,
+
+		"networkBandwidth":  metricData.NetworkBandwidth,
+		"networkRxData": metricData.NetworkRxData,
+		"networkTxData": metricData.NetworkTxData,
 	}
 
 	pt, err := client.NewPoint(INFLUXDB_CSD_MEASUREMENT, nil, fields, time.Now()) //measurements에 tag, field, time insert => 필요 없는 값이면 nil로 설정, time은 nil 설정이 안됨
