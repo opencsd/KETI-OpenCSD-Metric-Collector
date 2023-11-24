@@ -2,44 +2,30 @@ syntax = "proto3";
 
 package config;
 
-option go_package = "/root/workspace/cra/HUN/test2";
-
-service SEMetric {
-    rpc receiveSEMetric (SEMetricRequest) returns (MetricResponse);
-}
-
-service SSDMetric {
-    rpc receiveSSDMetric (SSDMetricRequest) returns (MetricResponse);
-}
+option go_package = "/root/workspace/cra/HUN/OpenCSD-Metric-Collector";
 
 service CSDMetric {
     rpc receiveCSDMetric (CSDMetricRequest) returns (MetricResponse);
 }
 
-service EtcdMetric {
-    rpc receiveEtcdMetric (EtcdMetricRequest) returns (MetricResponse);
-}
-
 message CSDMetricRequest { // csd metric 전송
     int32 id = 1;
-	double cpuUsage = 2;
-	double memUsage = 3;
-	double networkSpeed = 4;
-}
-
-message EtcdMetricRequest { // etcd metric 전송
-    int32 id = 1;
-	double cpuUsage = 2;
-	double memUsage = 3;
-	double networkSpeed = 4;
-}
-
-message SEMetricRequest {
     
-}
+	int32 totalCpuCapacity = 2;
+	double cpuUsage = 3;
+	double cpuUsagePercent = 4;
 
-message SSDMetricRequest {
+	int32 totalMemCapacity = 5;
+	int32 memUsage = 6;
+	double memUsagePercent = 7;
 
+	int32 totalDiskCapacity = 8;
+	int32 diskUsage = 9;
+	double diskUsagePercent = 10;
+
+	int32 networkBandwidth = 11;
+	int32 networkRxData = 12;
+	int32 networkTxData = 13;
 }
 
 message MetricResponse { // csd metric 응답
