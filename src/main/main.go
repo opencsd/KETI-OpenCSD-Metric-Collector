@@ -189,8 +189,8 @@ func CSDMetricInsert(metricData *CSDMetricData) {
 	}
 
 	// q := client.Query{ // 쿼리 날려서 추가한 데이터 확인
-	// 	Command:  "SELECT * FROM csd_metric",
-	// 	Database: "test",
+	// 	Command:  "SELECT * FROM csd1_metric LIMIT 10",
+	// 	Database: INFLUXDB_CSD_DB,
 	// }
 	// if response, err := c.Query(q); err == nil && response.Error() == nil {
 	// 	fmt.Println(response.Results)
