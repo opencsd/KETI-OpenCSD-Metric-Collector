@@ -53,6 +53,7 @@ type CSDMetricData struct {
 	NetworkTxData	  int32     `json:"networkTxData"`
 
 	CsdMetricScore    float64 	`json:"csdMetricScore"`
+	CsdMetricGrade    string
 }
 
 type EtcdMetricData struct {
@@ -113,6 +114,7 @@ func (s *server) ReceiveCSDMetric(ctx context.Context, in *pb.CSDMetricRequest) 
 	csdMetricData.NetworkTxData = networkTxData
 
 	csdMetricData.CsdMetricScore = csdMetricScore
+	csdMetricData.CsdMetricGrade = calcCSDScore(csdMetricScore)
     // csd metric DB에 삽입
     CSDMetricInsert(&csdMetricData)
 	
@@ -121,6 +123,23 @@ func (s *server) ReceiveCSDMetric(ctx context.Context, in *pb.CSDMetricRequest) 
 
 	// client stub에게 response
 	return &pb.MetricResponse{JsonConfig: `request success`}, nil
+}
+
+func calcCSDScore(score float64) string{
+	var grade string
+    switch {
+		case score >= 80:
+			grade = "very good"
+		case score >= 60:
+			grade = "good"
+		case score >= 40:
+			grade = "fail"
+		case score >= 20:
+			grade = "poor"
+		default:
+			grade = "very poor"
+    }
+	return grade
 }
 
 func CSDMetricInsert(metricData *CSDMetricData) {
@@ -174,7 +193,8 @@ func CSDMetricInsert(metricData *CSDMetricData) {
 		"network_rx_byte": metricData.NetworkRxData,
 		"network_tx_byte": metricData.NetworkTxData,
 
-		"csd_score": metricData.CsdMetricScore,
+		"score": metricData.CsdMetricScore,
+		"grade": metricData.CsdMetricGrade,
 	}
 
 	pt, err := client.NewPoint(INFLUXDB_CSD_MEASUREMENT, nil, fields, time.Now()) //measurements에 tag, field, time insert => 필요 없는 값이면 nil로 설정, time은 nil 설정이 안됨
