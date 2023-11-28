@@ -7,6 +7,7 @@ import (
 	"fmt"
     "time"
 	"os"
+	"strconv"
 
     // grpc
     pb "opencsd/src/config"
@@ -20,10 +21,10 @@ var(
 	//INSTANCE_METRIC_COLLECTOR_IP = "10.0.4.80"
 	//INSTANCE_METRIC_COLLECTOR_PORT = "40802"
 	
-    INFLUXDB_CSD_DB = "OpenCSD_Management_Platform"
-    INFLUXDB_CSD_MEASUREMENT = "csd_metric"
+    INFLUXDB_CSD_DB = "opencsd_management_platform"
+    // INFLUXDB_CSD_MEASUREMENT = "csd_metric"
 
-    INFLUXDB_ETCD_DB = "OpenCSD_Management_Platform"
+    INFLUXDB_ETCD_DB = "opencsd_management_platform"
     INFLUXDB_ETCD_MEASUREMENT = "etcd_metric"
 )
 
@@ -33,23 +34,25 @@ type server struct {
 }
 
 type CSDMetricData struct {
-	Id           int32          `json:"id"`
+	Id           int32           `json:"id"`
 	
-	TotalCpuCapacity  int32 	  `json:"totalCpuCapacity"`
-	CpuUsage		  float64 `json:"cpuUsage"`
-	CpuUsagePercent	  float64 `json:"cpuUsagePercent"`
-	
-	TotalMemCapacity  int32     `json:"totalMemCapacity"`
-	MemUsage		  int32 	  `json:"memUsage"`
-	MemUsagePercent	  float64 `json:"memUsagePercent"`
+	TotalCpuCapacity  int32 	 `json:"totalCpuCapacity"`
+	CpuUsage		  float64 	 `json:"cpuUsage"`
+	CpuUsagePercent	  float64 	 `json:"cpuUsagePercent"`
+
+	TotalMemCapacity  int32      `json:"totalMemCapacity"`
+	MemUsage		  int32 	 `json:"memUsage"`
+	MemUsagePercent	  float64    `json:"memUsagePercent"`
 	
 	TotalDiskCapacity int32     `json:"totalDiskCapacity"`
 	DiskUsage		  int32     `json:"diskUsage"`
-	DiskUsagePercent  float64 `json:"diskUsagePercent"`
+	DiskUsagePercent  float64   `json:"diskUsagePercent"`
 	
 	NetworkBandwidth  int32     `json:"networkBandwidth"`
 	NetworkRxData	  int32     `json:"networkRxData"`
 	NetworkTxData	  int32     `json:"networkTxData"`
+
+	CsdMetricScore    float64 	`json:"csdMetricScore"`
 }
 
 type EtcdMetricData struct {
@@ -77,6 +80,7 @@ func (s *server) ReceiveCSDMetric(ctx context.Context, in *pb.CSDMetricRequest) 
     networkRxData := in.GetNetworkRxData()
     networkTxData := in.GetNetworkTxData()
 
+	csdMetricScore := in.GetCsdMetricScore()
 
 	
     // 수신 데이터 로그 출력
@@ -86,7 +90,7 @@ func (s *server) ReceiveCSDMetric(ctx context.Context, in *pb.CSDMetricRequest) 
 	log.Printf("TotalMemCapacity=%d, MemUsage=%d, MemUsagePercent=%.4f", totalMemCapacity, memUsage, memUsagePercent)
 	log.Printf("TotalDiskCapacity=%d, DiskUsage=%d, DiskUsagePercent=%.4f", totalDiskCapacity, diskUsage, diskUsagePercent)
 	log.Printf("NetworkBandwidth=%d, NetworkRxData=%d, NetworkTxData=%d", networkBandwidth, networkRxData, networkTxData)
-
+	log.Printf("CsdMetricScore=%.4f", csdMetricScore)
 
 	// 메트릭 구조체 생성 및 초기화
 	var csdMetricData CSDMetricData
@@ -108,6 +112,7 @@ func (s *server) ReceiveCSDMetric(ctx context.Context, in *pb.CSDMetricRequest) 
 	csdMetricData.NetworkRxData = networkRxData
 	csdMetricData.NetworkTxData = networkTxData
 
+	csdMetricData.CsdMetricScore = csdMetricScore
     // csd metric DB에 삽입
     CSDMetricInsert(&csdMetricData)
 	
@@ -145,27 +150,31 @@ func CSDMetricInsert(metricData *CSDMetricData) {
 		log.Fatal(err)
 	}
 
+	var INFLUXDB_CSD_MEASUREMENT = "csd" + strconv.Itoa(int(metricData.Id)) + "_metric" // csd 번호에 따라 테이블 설정 
+
 	// tags := map[string]string{"flags": "csd-metric"} //etcd 정보인지 csd 정보인지 분기 (etcd : 1, csd metric : 2)
 	fields := map[string]interface{}{
-		"currTime": time.Now().Format("15:04:05"),
+		"current_time": time.Now().Format("15:04:05"),
 		"id": metricData.Id,
 
-		"cpuUsageCapacity": metricData.TotalCpuCapacity,
-		"cpuUsage": metricData.CpuUsage,
-		"cpuUsagePercent": metricData.CpuUsagePercent,
+		"cpu_total": metricData.TotalCpuCapacity,
+		"cpu_usage": metricData.CpuUsage,
+		"cpu_percent": metricData.CpuUsagePercent,
 
-		"memUsageCapacity":  metricData.TotalMemCapacity,
-		"memUsage": metricData.MemUsage,
-		"memUsagePercent": metricData.MemUsagePercent,
+		"memory_total":  metricData.TotalMemCapacity,
+		"memory_usage": metricData.MemUsage,
+		"memory_percent": metricData.MemUsagePercent,
 
 		
-		"diskUsageCapacity":  metricData.TotalDiskCapacity,
-		"diskUsage": metricData.DiskUsage,
-		"diskUsagePercent": metricData.DiskUsagePercent,
+		"disk_total":  metricData.TotalDiskCapacity,
+		"disk_usage": metricData.DiskUsage,
+		"disk_percent": metricData.DiskUsagePercent,
 
-		"networkBandwidth":  metricData.NetworkBandwidth,
-		"networkRxData": metricData.NetworkRxData,
-		"networkTxData": metricData.NetworkTxData,
+		"network_bandwidth":  metricData.NetworkBandwidth,
+		"network_rx_byte": metricData.NetworkRxData,
+		"network_tx_byte": metricData.NetworkTxData,
+
+		"csd_score": metricData.CsdMetricScore,
 	}
 
 	pt, err := client.NewPoint(INFLUXDB_CSD_MEASUREMENT, nil, fields, time.Now()) //measurements에 tag, field, time insert => 필요 없는 값이면 nil로 설정, time은 nil 설정이 안됨
@@ -243,7 +252,6 @@ func main() {
 	// pb.RegisterEtcdMetricServer(s, &server{}) // register etcd metric server start
     
 	fmt.Println("gRPC Server Created [port : 40801]")
-
 	if err := s.Serve(lis); err != nil {
         log.Fatalf("failed to serve: %v", err)
     }

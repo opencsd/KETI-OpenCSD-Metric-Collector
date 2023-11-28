@@ -37,6 +37,8 @@ spec:
               value: "ketilinux"
             - name: OPERATOR_NAME
               value: "opencsd-metric-collector"
+      nodeSelector:
+        key: master
       tolerations:
         - key: node.kubernetes.io/not-ready
           effect: NoExecute
