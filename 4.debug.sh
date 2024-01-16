@@ -1,5 +1,5 @@
 #/bin/bash
-NS=default
+NS=management-platform
 
 NAME=$(kubectl get pod -n $NS | grep -E 'opencsd-metric-collector' | awk '{print $1}')
 
